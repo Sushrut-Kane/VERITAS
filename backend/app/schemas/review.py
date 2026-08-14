@@ -1,22 +1,34 @@
+"""Pydantic schemas for review endpoints (§3.7, §3.8)."""
+
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.db.models.attribute import PolicyDecision
-from app.schemas.attribute import AttributeRead
+from app.schemas.attribute import AttributeDetailRead
 
 
-class ReviewQueueItem(AttributeRead):
-    product_sku: str | None = None
+class ReviewQueueItem(BaseModel):
+    """Same shape as AttributeRead but with product_sku for context."""
+
+    id: UUID
+    attr_key: str
+    attr_value: str
+    classification: str | None = None
+    classification_confidence: float | None = None
+    policy_decision: str | None = None
+    source_count: int = 1
 
 
 class ReviewDecisionRequest(BaseModel):
-    # Human reviewer overrides the automated policy decision.
-    decision: Literal["publish", "blocked"]
-    note: str | None = None
+    """§3.8 request body for POST /attributes/{id}/review."""
+
+    action: Literal["approve", "reject", "edit"]
+    edited_value: str | None = None
+    reviewer_note: str | None = None
 
 
-class ReviewDecisionResponse(BaseModel):
-    attribute_id: UUID
-    policy_decision: PolicyDecision
+class ReviewDecisionResponse(AttributeDetailRead):
+    """Response to a review action — full attribute detail plus updated audit_log."""
+
+    pass

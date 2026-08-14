@@ -50,7 +50,7 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     for module in _ROUTERS:
-        app.include_router(module.router, prefix="/api/v1")
+        app.include_router(module.router)
 
     @app.get("/health", tags=["health"])
     async def health() -> dict[str, str]:

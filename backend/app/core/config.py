@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     neo4j_password: str = "veritas-neo4j"
 
     # --- LLM --------------------------------------------------------------
-    anthropic_api_key: str = ""
-    anthropic_model: str = "claude-3-5-sonnet-20241022"
+    groq_api_key: str = ""
+    groq_model: str = "llama3-70b-8192"
     llm_max_tokens: int = 4096
 
     # --- Auth -------------------------------------------------------------
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     @property
     def llm_enabled(self) -> bool:
-        return bool(self.anthropic_api_key)
+        return bool(self.groq_api_key)
 
 
 @lru_cache

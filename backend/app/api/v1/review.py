@@ -1,39 +1,28 @@
-import uuid
-
+"""§3.7  GET /review-queue
+Filtered to policy_decision = human_review, sorted by classification_confidence ascending.
+"""
 from fastapi import APIRouter
 
 from app.api.deps import CurrentUser, SessionDep
 from app.schemas.attribute import AttributeRead
-from app.schemas.review import (
-    ReviewDecisionRequest,
-    ReviewDecisionResponse,
-    ReviewQueueItem,
-)
 from app.services import review_service
 
-router = APIRouter(prefix="/review", tags=["review"])
+router = APIRouter(tags=["review"])
 
 
-@router.get("/queue", response_model=list[ReviewQueueItem])
+@router.get("/review-queue", response_model=list[AttributeRead])
 async def review_queue(session: SessionDep, _: CurrentUser):
+    """§3.7 — same shape as attributes list, filtered and sorted."""
     rows = await review_service.list_review_queue(session)
-    items: list[ReviewQueueItem] = []
-    for attribute, sku in rows:
-        base = AttributeRead.model_validate(attribute).model_dump()
-        items.append(ReviewQueueItem(**base, product_sku=sku))
-    return items
-
-
-@router.post("/{attribute_id}/decision", response_model=ReviewDecisionResponse)
-async def submit_decision(
-    attribute_id: uuid.UUID,
-    payload: ReviewDecisionRequest,
-    session: SessionDep,
-    _: CurrentUser,
-):
-    attribute = await review_service.apply_review_decision(
-        session, attribute_id, payload.decision, payload.note
-    )
-    return ReviewDecisionResponse(
-        attribute_id=attribute.id, policy_decision=attribute.policy_decision
-    )
+    return [
+        AttributeRead(
+            id=attr.id,
+            attr_key=attr.attr_key,
+            attr_value=attr.attr_value,
+            classification=attr.classification,
+            classification_confidence=attr.classification_confidence,
+            policy_decision=attr.policy_decision,
+            source_count=1,  # TODO: compute from graph
+        )
+        for attr, _sku in rows
+    ]

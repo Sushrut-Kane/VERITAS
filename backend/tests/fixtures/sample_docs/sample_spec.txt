@@ -1,0 +1,9 @@
+VERITAS INDUSTRIAL PUMP — TECHNICAL SPECIFICATION (SAMPLE)
+
+Model: VRT-PUMP-3000
+Max Operating Temperature: 80 °C
+Rated Voltage: 230 V
+Weight: 12 kg
+Housing Material: Stainless Steel 316
+Ingress Protection: IP67
+Max Pressure: 10 bar

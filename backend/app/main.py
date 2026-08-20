@@ -9,6 +9,7 @@ from app.api.v1 import (
     attributes,
     auth,
     catalog,
+    delivery,
     documents,
     pipeline_status,
     products,
@@ -21,7 +22,16 @@ from app.graph.client import apply_schema, close_driver
 
 logger = get_logger(__name__)
 
-_ROUTERS = (auth, products, documents, attributes, review, catalog, pipeline_status)
+_ROUTERS = (
+    auth,
+    products,
+    documents,
+    attributes,
+    review,
+    catalog,
+    pipeline_status,
+    delivery,
+)
 
 
 @asynccontextmanager

@@ -18,6 +18,7 @@ from app.db.models.document import Document, DocType, DocumentStatus
 from app.db.models.attribute import Attribute, Classification, PolicyDecision
 from app.catalog.ingest import read_catalog_rows
 from app.catalog.enrich import enrich_row
+from app.policy.rules import decide_policy
 
 
 async def seed_from_csv(csv_path: Path, limit: int | None = None, clear: bool = False) -> None:
@@ -76,23 +77,33 @@ async def seed_from_csv(csv_path: Path, limit: int | None = None, clear: bool = 
             )
             docs_to_add.append(doc)
 
-            for attr in enriched.attributes:
-                if enriched.needs_review:
+            for attr_idx, attr in enumerate(enriched.attributes):
+                reasoning = None
+                if enriched.needs_review and (attr.label == "Type" or attr_idx == 0):
                     classification = Classification.conflicting
                     confidence = 0.58
-                    policy = PolicyDecision.human_review
+                    reasoning = "; ".join(enriched.review_reasons)
                 elif attr.label in ("Diameter", "Width", "Length", "Thickness", "Size", "Depth", "Minimum Height", "Maximum Height"):
                     classification = Classification.derived
-                    confidence = 0.88
-                    policy = PolicyDecision.publish
+                    # Part of derived attributes route to review for verification, part publish
+                    confidence = 0.78 if (inserted_products % 3 == 0) else 0.92
+                    reasoning = "Normalized fractional dimension — requires format validation" if confidence < 0.85 else None
                 elif attr.label == "Type" and not enriched.brand_name:
                     classification = Classification.inferred
-                    confidence = 0.76
-                    policy = PolicyDecision.publish
+                    confidence = 0.75 if (inserted_products % 2 == 0) else 0.88
+                    reasoning = "Contextually inferred product category from description" if confidence < 0.85 else None
+                elif inserted_products % 12 == 0:
+                    # Low-confidence verified attribute needing confirmation
+                    classification = Classification.verified
+                    confidence = 0.71
+                    reasoning = "Low extraction score from truncated description"
                 else:
                     classification = Classification.verified
                     confidence = 0.96
-                    policy = PolicyDecision.publish
+
+                # Route through VERITAS policy rules
+                policy_str = decide_policy(attr.label.lower().replace(" ", "_"), classification.value, confidence)
+                policy = PolicyDecision(policy_str)
 
                 attr_obj = Attribute(
                     id=uuid.uuid4(),
@@ -105,7 +116,7 @@ async def seed_from_csv(csv_path: Path, limit: int | None = None, clear: bool = 
                     extraction_confidence=0.95,
                     classification=classification,
                     classification_confidence=confidence,
-                    reasoning="; ".join(enriched.review_reasons) if enriched.review_reasons else None,
+                    reasoning=reasoning,
                     policy_decision=policy,
                 )
                 attrs_to_add.append(attr_obj)

@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BatchUploadRouteImport } from './routes/batch-upload'
 import { Route as CatalogRouteImport } from './routes/catalog'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as UploadRouteImport } from './routes/upload'
@@ -22,14 +22,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BatchUploadRoute = BatchUploadRouteImport.update({
-  id: '/batch-upload',
-  path: '/batch-upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CatalogRoute = CatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -55,8 +55,8 @@ const AttributeIdRoute = AttributeIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/batch-upload': typeof BatchUploadRoute
   '/catalog': typeof CatalogRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/review': typeof ReviewRoute
   '/upload': typeof UploadRoute
@@ -64,8 +64,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/batch-upload': typeof BatchUploadRoute
   '/catalog': typeof CatalogRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/review': typeof ReviewRoute
   '/upload': typeof UploadRoute
@@ -74,8 +74,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/batch-upload': typeof BatchUploadRoute
   '/catalog': typeof CatalogRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/review': typeof ReviewRoute
   '/upload': typeof UploadRoute
@@ -84,14 +84,27 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/batch-upload' | '/catalog' | '/login' | '/review' | '/upload' | '/attribute/$id'
+    | '/'
+    | '/catalog'
+    | '/dashboard'
+    | '/login'
+    | '/review'
+    | '/upload'
+    | '/attribute/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/batch-upload' | '/catalog' | '/login' | '/review' | '/upload' | '/attribute/$id'
+  to:
+    | '/'
+    | '/catalog'
+    | '/dashboard'
+    | '/login'
+    | '/review'
+    | '/upload'
+    | '/attribute/$id'
   id:
     | '__root__'
     | '/'
-    | '/batch-upload'
     | '/catalog'
+    | '/dashboard'
     | '/login'
     | '/review'
     | '/upload'
@@ -100,8 +113,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BatchUploadRoute: typeof BatchUploadRoute
   CatalogRoute: typeof CatalogRoute
+  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   ReviewRoute: typeof ReviewRoute
   UploadRoute: typeof UploadRoute
@@ -117,18 +130,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/batch-upload': {
-      id: '/batch-upload'
-      path: '/batch-upload'
-      fullPath: '/batch-upload'
-      preLoaderRoute: typeof BatchUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/catalog': {
       id: '/catalog'
       path: '/catalog'
       fullPath: '/catalog'
       preLoaderRoute: typeof CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -164,8 +177,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BatchUploadRoute: BatchUploadRoute,
   CatalogRoute: CatalogRoute,
+  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   ReviewRoute: ReviewRoute,
   UploadRoute: UploadRoute,

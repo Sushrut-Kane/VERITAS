@@ -1,14 +1,14 @@
-"""Thin async Anthropic wrapper with tenacity retries and a JSON parse helper.
+"""Async LLM wrapper supporting Groq and Anthropic with tenacity retries and JSON parsing.
 
-Centralizes the three LLM call sites (extraction, evidence-sufficiency,
-classification) so retry/logging/parsing live in one place. When no API key is
-configured, ``complete`` raises and callers fall back to deterministic logic —
-this keeps the whole pipeline runnable offline for tests and demos.
+Centralizes the LLM call sites (extraction, evidence-sufficiency, classification).
+When no API key is configured, ``complete`` raises and callers fall back to
+deterministic logic — keeping the pipeline runnable offline for tests and demos.
 """
 import json
 from functools import lru_cache
 from typing import Any
 
+import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import settings
@@ -22,33 +22,63 @@ class LLMUnavailableError(RuntimeError):
 
 
 @lru_cache
-def _client() -> Any:
+def _anthropic_client() -> Any:
     from anthropic import AsyncAnthropic
 
     return AsyncAnthropic(api_key=settings.anthropic_api_key)
 
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=8),
-    reraise=True,
-)
-async def complete(
+async def _complete_groq(
     system: str,
     user_content: str | list[dict[str, Any]],
     *,
     max_tokens: int | None = None,
 ) -> str:
-    """Call Claude (temperature 0) and return the concatenated text output."""
-    if not settings.llm_enabled:
-        raise LLMUnavailableError("ANTHROPIC_API_KEY is not configured")
+    messages = [{"role": "system", "content": system}]
+    if isinstance(user_content, str):
+        messages.append({"role": "user", "content": user_content})
+    else:
+        messages.append({"role": "user", "content": str(user_content)})
 
+    payload = {
+        "model": settings.groq_model,
+        "messages": messages,
+        "temperature": 0,
+        "max_tokens": max_tokens or settings.llm_max_tokens,
+    }
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        res = await client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+            json=payload,
+        )
+        if res.status_code != 200:
+            logger.error("groq_error", status_code=res.status_code, body=res.text)
+            raise RuntimeError(f"Groq API error ({res.status_code}): {res.text}")
+        data = res.json()
+        usage = data.get("usage")
+        if usage:
+            logger.info(
+                "llm_usage",
+                input_tokens=usage.get("prompt_tokens"),
+                output_tokens=usage.get("completion_tokens"),
+            )
+        return data["choices"][0]["message"]["content"] or ""
+
+
+async def _complete_anthropic(
+    system: str,
+    user_content: str | list[dict[str, Any]],
+    *,
+    max_tokens: int | None = None,
+) -> str:
     if isinstance(user_content, str):
         messages = [{"role": "user", "content": user_content}]
     else:
         messages = [{"role": "user", "content": user_content}]
 
-    response = await _client().messages.create(
+    response = await _anthropic_client().messages.create(
         model=settings.anthropic_model,
         max_tokens=max_tokens or settings.llm_max_tokens,
         temperature=0,
@@ -69,6 +99,26 @@ async def complete(
         if text:
             parts.append(text)
     return "".join(parts)
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    reraise=True,
+)
+async def complete(
+    system: str,
+    user_content: str | list[dict[str, Any]],
+    *,
+    max_tokens: int | None = None,
+) -> str:
+    """Call active LLM (Groq or Claude) and return text output."""
+    if not settings.llm_enabled:
+        raise LLMUnavailableError("Neither GROQ_API_KEY nor ANTHROPIC_API_KEY is configured")
+
+    if settings.groq_api_key:
+        return await _complete_groq(system, user_content, max_tokens=max_tokens)
+    return await _complete_anthropic(system, user_content, max_tokens=max_tokens)
 
 
 def parse_json_block(text: str) -> Any:

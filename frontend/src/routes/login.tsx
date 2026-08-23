@@ -72,8 +72,8 @@ function LoginPage() {
         onSubmit={handleSubmit((values) => {
           signIn(values.email);
           toast.success("Signed in", { description: values.email });
-          // Return the user to wherever they were before signing in.
-          navigate({ to: redirect ?? "/review", viewTransition: true, replace: true });
+          // Navigate to dashboard or previous destination
+          navigate({ to: redirect ?? "/dashboard", viewTransition: true, replace: true });
         })}
       >
         <label className="block text-xs text-muted-foreground">

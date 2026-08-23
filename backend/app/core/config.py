@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     supabase_storage_bucket_images: str = ""
 
     # --- LLM --------------------------------------------------------------
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-3-5-sonnet-20241022"
     llm_max_tokens: int = 4096
@@ -60,7 +62,7 @@ class Settings(BaseSettings):
 
     @property
     def llm_enabled(self) -> bool:
-        return bool(self.anthropic_api_key)
+        return bool(self.groq_api_key or self.anthropic_api_key)
 
 
 @lru_cache

@@ -35,6 +35,8 @@ backend/uploads/
 uploads/
 *.db
 *.sqlite3
+*.csv
+Unihack_*.csv
 
 # --- Node / frontend (added later by frontend) ---
 node_modules/

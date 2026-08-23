@@ -59,10 +59,17 @@ function DashboardPage() {
     unsupported: 0,
   };
 
-  // Add published verified items
-  classificationCounts.verified += publishedAttributeCount;
+  // Tally published items by trust badge
+  publishedProducts.forEach((product) => {
+    product.attributes.forEach((attr) => {
+      const badge = attr.trust_badge as Classification;
+      if (badge in classificationCounts) {
+        classificationCounts[badge] = (classificationCounts[badge] || 0) + 1;
+      }
+    });
+  });
 
-  // Add review queue items
+  // Tally review queue items by classification
   reviewQueue.forEach((item) => {
     const key = item.classification as Classification;
     if (key in classificationCounts) {
@@ -252,6 +259,19 @@ function DashboardPage() {
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 Flagged by Red-Teaming: cross-document discrepancy or OEM/brand mismatch.
+              </p>
+            </div>
+
+            {/* Unsupported */}
+            <div className="rounded-sm border border-red-500/20 bg-red-500/5 p-3.5 sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <StatusBadge classification="unsupported" />
+                <span className="data-value text-lg font-semibold text-red-600">
+                  {classificationCounts.unsupported}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Blocked by policy: ungrounded claim lacking verified document span evidence.
               </p>
             </div>
           </div>

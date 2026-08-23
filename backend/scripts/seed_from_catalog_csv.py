@@ -20,7 +20,7 @@ from app.catalog.ingest import read_catalog_rows
 from app.catalog.enrich import enrich_row
 
 
-async def seed_from_csv(csv_path: Path, limit: int | None = None) -> None:
+async def seed_from_csv(csv_path: Path, limit: int | None = None, clear: bool = False) -> None:
     print(f"Reading catalog rows from {csv_path}...")
     catalog_rows = read_catalog_rows(str(csv_path))
     if limit is not None:
@@ -29,6 +29,13 @@ async def seed_from_csv(csv_path: Path, limit: int | None = None) -> None:
     print(f"Enriching and inserting {len(catalog_rows)} products into database...")
 
     async with AsyncSessionLocal() as session:
+        if clear:
+            print("Clearing existing attributes, documents, and products...")
+            await session.execute(delete(Attribute))
+            await session.execute(delete(Document))
+            await session.execute(delete(Product))
+            await session.commit()
+
         inserted_products = 0
         inserted_attributes = 0
         seen_skus = set()
@@ -70,11 +77,23 @@ async def seed_from_csv(csv_path: Path, limit: int | None = None) -> None:
             docs_to_add.append(doc)
 
             for attr in enriched.attributes:
-                policy = (
-                    PolicyDecision.human_review
-                    if enriched.needs_review
-                    else PolicyDecision.publish
-                )
+                if enriched.needs_review:
+                    classification = Classification.conflicting
+                    confidence = 0.58
+                    policy = PolicyDecision.human_review
+                elif attr.label in ("Diameter", "Width", "Length", "Thickness", "Size", "Depth", "Minimum Height", "Maximum Height"):
+                    classification = Classification.derived
+                    confidence = 0.88
+                    policy = PolicyDecision.publish
+                elif attr.label == "Type" and not enriched.brand_name:
+                    classification = Classification.inferred
+                    confidence = 0.76
+                    policy = PolicyDecision.publish
+                else:
+                    classification = Classification.verified
+                    confidence = 0.96
+                    policy = PolicyDecision.publish
+
                 attr_obj = Attribute(
                     id=uuid.uuid4(),
                     product_id=product_id,
@@ -84,8 +103,8 @@ async def seed_from_csv(csv_path: Path, limit: int | None = None) -> None:
                     unit=attr.uom or None,
                     source_document_id=doc_id,
                     extraction_confidence=0.95,
-                    classification=Classification.verified,
-                    classification_confidence=0.95,
+                    classification=classification,
+                    classification_confidence=confidence,
                     reasoning="; ".join(enriched.review_reasons) if enriched.review_reasons else None,
                     policy_decision=policy,
                 )
@@ -115,9 +134,10 @@ def main() -> None:
     )
     parser.add_argument("--input", required=True, help="Path to input catalog CSV")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of rows")
+    parser.add_argument("--clear", action="store_true", help="Clear existing products before seeding")
     args = parser.parse_args()
 
-    asyncio.run(seed_from_csv(Path(args.input), limit=args.limit))
+    asyncio.run(seed_from_csv(Path(args.input), limit=args.limit, clear=args.clear))
 
 
 if __name__ == "__main__":

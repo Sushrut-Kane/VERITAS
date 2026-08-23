@@ -50,11 +50,35 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
     parser.add_argument("--expected", required=True)
+    parser.add_argument(
+        "--min-matches",
+        type=int,
+        default=10,
+        help="Warn if fewer than N expected rows match the input by Mfg_Part_Num",
+    )
     args = parser.parse_args()
 
     input_rows = {r.mfg_part_num: r for r in read_catalog_rows(args.input)}
     with open(args.expected, newline="", encoding="utf-8-sig") as handle:
         expected_rows = list(csv.DictReader(handle))
+
+    # ── Sanity check: are these files a matched ground-truth pair? ─────
+    expected_parts = [
+        (r.get("Mfg_Part_Num") or "").strip() for r in expected_rows
+    ]
+    matched_count = sum(1 for p in expected_parts if p in input_rows)
+    if matched_count < args.min_matches:
+        print(
+            f"\n{'=' * 72}\n"
+            f"  ⚠  WARNING: Only {matched_count} of {len(expected_parts)} expected\n"
+            f"     Mfg_Part_Num values were found in the input file.\n"
+            f"\n"
+            f"     This strongly suggests the expected-output file is NOT a matched\n"
+            f"     ground-truth pair for this input — accuracy numbers below may be\n"
+            f"     meaningless. Do NOT interpret low scores as pipeline failures\n"
+            f"     until you have a properly matched ground-truth file.\n"
+            f"{'=' * 72}\n"
+        )
 
     field_hits = {f: 0 for f in COMPARE_FIELDS}
     invoice_ok = mobile_ok = 0

@@ -8,6 +8,7 @@ import {
   addProduct,
   fetchAttribute,
   fetchCatalog,
+  fetchLovCompliance,
   fetchPipelineStatus,
   fetchReviewQueue,
   listProducts,
@@ -64,3 +65,7 @@ export function useReviewAction(id: string) {
       ]),
   });
 }
+
+export const useLovCompliance = () =>
+  useQuery({ queryKey: ["lov-compliance"], queryFn: fetchLovCompliance, staleTime: 30_000 });
+

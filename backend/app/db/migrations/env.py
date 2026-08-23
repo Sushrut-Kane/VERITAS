@@ -1,4 +1,20 @@
-"""Alembic async migration environment."""
+"""Alembic async migration environment.
+
+Supabase migration guide
+------------------------
+Postgres now runs in Supabase. Set ``DATABASE_URL`` in ``.env``:
+
+* **Application runtime** — use the **pooled** connection string on port **6543**
+  (Supabase transaction pooler), e.g.
+  ``postgresql+asyncpg://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres``
+
+* **Alembic migrations** — use the **direct** connection string on port **5432**,
+  e.g.
+  ``postgresql+asyncpg://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres``
+
+Pooled connections do not support prepared statements the way Alembic expects;
+always run ``alembic upgrade head`` against the direct (5432) URL.
+"""
 import asyncio
 from logging.config import fileConfig
 

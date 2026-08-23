@@ -55,3 +55,31 @@ def write_delivery_csv(rows: list[dict[str, str]], path: str) -> None:
         writer.writerow(DELIVERY_COLUMNS)
         for data in rows:
             writer.writerow(row_to_list(data))
+
+
+# ---------------------------------------------------------------------------
+# QA export: frozen 252 + review metadata appended at the end
+# ---------------------------------------------------------------------------
+
+QA_COLUMNS: list[str] = DELIVERY_COLUMNS + ["_NEEDS_REVIEW", "_REVIEW_REASONS"]
+
+
+def build_qa_row(row: CatalogRow, product: EnrichedProduct) -> dict[str, str]:
+    """Delivery row + review metadata appended (never reorders the 252)."""
+    data = build_delivery_row(row, product)
+    data["_NEEDS_REVIEW"] = "TRUE" if product.needs_review else "FALSE"
+    data["_REVIEW_REASONS"] = "; ".join(product.review_reasons)
+    return data
+
+
+def row_to_qa_list(data: dict[str, str]) -> list[str]:
+    return [data.get(col, "") for col in QA_COLUMNS]
+
+
+def write_qa_csv(rows: list[dict[str, str]], path: str) -> None:
+    with open(path, "w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(QA_COLUMNS)
+        for data in rows:
+            writer.writerow(row_to_qa_list(data))
+

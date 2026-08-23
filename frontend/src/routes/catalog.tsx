@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { useCatalog } from "@/lib/veritas/hooks";
+import { useCatalog, useLovCompliance } from "@/lib/veritas/hooks";
 import { useUiStore } from "@/lib/store/uiStore";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,46 @@ function TrustBadge({ badge }: { badge: string }) {
     >
       {badge}
     </span>
+  );
+}
+
+/** LOV compliance stat tile */
+function LovComplianceTile() {
+  const { data, isPending } = useLovCompliance();
+
+  if (isPending) {
+    return (
+      <div className="h-24 animate-pulse rounded-md bg-muted" />
+    );
+  }
+
+  const hasData = data?.compliance_pct !== null && data?.compliance_pct !== undefined;
+
+  return (
+    <div className="rounded-md border bg-surface px-5 py-4">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        LOV compliance
+      </p>
+      {hasData ? (
+        <div className="mt-2 flex items-baseline gap-3">
+          <span className="data-value text-2xl font-semibold tracking-tight">
+            {data!.compliance_pct!.toFixed(1)}%
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {data!.matched} of {data!.total_attributes} attribute values in LOV
+          </span>
+        </div>
+      ) : (
+        <div className="mt-2">
+          <span className="text-sm text-muted-foreground italic">
+            Reference data not loaded
+          </span>
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            Run <code className="data-value text-[11px]">scripts/load_reference_data.py</code> to populate LOV tables.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -82,6 +122,8 @@ function CatalogPage() {
           />
         }
       />
+
+      <LovComplianceTile />
 
       {isPending ? (
         <div className="space-y-3">
@@ -130,3 +172,4 @@ function CatalogPage() {
     </div>
   );
 }
+

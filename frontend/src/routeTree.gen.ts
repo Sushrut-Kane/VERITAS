@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BatchUploadRouteImport } from './routes/batch-upload'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ReviewRouteImport } from './routes/review'
@@ -19,6 +20,11 @@ import { Route as AttributeIdRouteImport } from './routes/attribute.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BatchUploadRoute = BatchUploadRouteImport.update({
+  id: '/batch-upload',
+  path: '/batch-upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogRoute = CatalogRouteImport.update({
@@ -49,6 +55,7 @@ const AttributeIdRoute = AttributeIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/batch-upload': typeof BatchUploadRoute
   '/catalog': typeof CatalogRoute
   '/login': typeof LoginRoute
   '/review': typeof ReviewRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/batch-upload': typeof BatchUploadRoute
   '/catalog': typeof CatalogRoute
   '/login': typeof LoginRoute
   '/review': typeof ReviewRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/batch-upload': typeof BatchUploadRoute
   '/catalog': typeof CatalogRoute
   '/login': typeof LoginRoute
   '/review': typeof ReviewRoute
@@ -75,12 +84,13 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/catalog' | '/login' | '/review' | '/upload' | '/attribute/$id'
+    '/' | '/batch-upload' | '/catalog' | '/login' | '/review' | '/upload' | '/attribute/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/catalog' | '/login' | '/review' | '/upload' | '/attribute/$id'
+  to: '/' | '/batch-upload' | '/catalog' | '/login' | '/review' | '/upload' | '/attribute/$id'
   id:
     | '__root__'
     | '/'
+    | '/batch-upload'
     | '/catalog'
     | '/login'
     | '/review'
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BatchUploadRoute: typeof BatchUploadRoute
   CatalogRoute: typeof CatalogRoute
   LoginRoute: typeof LoginRoute
   ReviewRoute: typeof ReviewRoute
@@ -104,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/batch-upload': {
+      id: '/batch-upload'
+      path: '/batch-upload'
+      fullPath: '/batch-upload'
+      preLoaderRoute: typeof BatchUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog': {
@@ -146,6 +164,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BatchUploadRoute: BatchUploadRoute,
   CatalogRoute: CatalogRoute,
   LoginRoute: LoginRoute,
   ReviewRoute: ReviewRoute,

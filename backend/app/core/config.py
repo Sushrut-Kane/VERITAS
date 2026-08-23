@@ -12,14 +12,24 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # --- Datastores -------------------------------------------------------
-    database_url: str = "postgresql+asyncpg://veritas:veritas@localhost:5432/veritas"
+    # Supabase Postgres (pooled port 6543 for the app; use direct 5432 for Alembic).
+    database_url: str = (
+        "postgresql+asyncpg://postgres.[project-ref]:[password]"
+        "@aws-0-[region].pooler.supabase.com:6543/postgres"
+    )
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: str = "veritas-neo4j"
 
+    # --- Supabase ---------------------------------------------------------
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+    supabase_storage_bucket_docs: str = ""
+    supabase_storage_bucket_images: str = ""
+
     # --- LLM --------------------------------------------------------------
-    groq_api_key: str = ""
-    groq_model: str = "llama3-70b-8192"
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-3-5-sonnet-20241022"
     llm_max_tokens: int = 4096
 
     # --- Auth -------------------------------------------------------------
@@ -50,7 +60,7 @@ class Settings(BaseSettings):
 
     @property
     def llm_enabled(self) -> bool:
-        return bool(self.groq_api_key)
+        return bool(self.anthropic_api_key)
 
 
 @lru_cache

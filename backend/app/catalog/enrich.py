@@ -6,6 +6,7 @@ requires an API key or third-party packages.
 """
 import re
 
+from app.catalog.classify import classify_row
 from app.catalog.desc_parser import parse_part_desc
 from app.catalog.descriptions import build_all
 from app.catalog.manufacturer import parse_manufacturer
@@ -38,13 +39,19 @@ def _brand_manufacturer_mismatch(brand: str, manufacturer: str) -> bool:
     )
 
 
-def enrich_row(row: CatalogRow) -> EnrichedProduct:
+def enrich_row(
+    row: CatalogRow, *, classpath_candidates: list[str] | None = None
+) -> EnrichedProduct:
     name, code = parse_manufacturer(row.part_manuf)
     brand = first_real_brand(row.unilog_brand, row.e1_brand, row.dib_brand)
     attributes, product_type = parse_part_desc(row.part_desc, row.mfg_part_num)
     product_type = _strip_leading_brand(product_type, name)
     if product_type:
         attributes.append(Attribute("Type", product_type))
+
+    classpath, _confidence = classify_row(
+        row.part_desc, row.part_manuf, classpath_candidates
+    )
 
     product = EnrichedProduct(
         part_number=row.mfg_part_num,
@@ -53,6 +60,7 @@ def enrich_row(row: CatalogRow) -> EnrichedProduct:
         manufacturer_code=code,
         brand_name=brand,
         product_type=product_type,
+        classpath=classpath,
         attributes=attributes,
     )
     if _brand_manufacturer_mismatch(brand, name):

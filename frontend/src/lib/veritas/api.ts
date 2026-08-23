@@ -197,3 +197,27 @@ export async function submitReview(id: string, action: ReviewAction) {
     body: JSON.stringify(action),
   });
 }
+
+// ── LOV Compliance ───────────────────────────────────────────────
+
+const lovComplianceSchema = z.object({
+  compliance_pct: z.number().nullable(),
+  total_attributes: z.number(),
+  matched: z.number(),
+  message: z.string(),
+});
+
+export type LovCompliance = z.infer<typeof lovComplianceSchema>;
+
+export async function fetchLovCompliance(): Promise<LovCompliance> {
+  if (USE_MOCK) {
+    return {
+      compliance_pct: null,
+      total_attributes: 0,
+      matched: 0,
+      message: "Reference data not loaded",
+    };
+  }
+  return request(lovComplianceSchema, "/delivery/lov-compliance");
+}
+

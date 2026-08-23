@@ -23,9 +23,9 @@ class LLMUnavailableError(RuntimeError):
 
 @lru_cache
 def _client() -> Any:
-    from groq import AsyncGroq
+    from anthropic import AsyncAnthropic
 
-    return AsyncGroq(api_key=settings.groq_api_key)
+    return AsyncAnthropic(api_key=settings.anthropic_api_key)
 
 
 @retry(
@@ -39,44 +39,36 @@ async def complete(
     *,
     max_tokens: int | None = None,
 ) -> str:
-    """Call Groq (temperature 0) and return the concatenated text output."""
+    """Call Claude (temperature 0) and return the concatenated text output."""
     if not settings.llm_enabled:
-        raise LLMUnavailableError("GROQ_API_KEY is not configured")
-    
-    # Format messages for Groq API
-    messages = [{"role": "system", "content": system}]
-    
-    # For extraction payload where we previously used a list of dicts for anthropic vision
-    if isinstance(user_content, list):
-        # Groq might not support Anthropic's exact vision payload, so let's try to extract text if it's there
-        text_content = ""
-        for block in user_content:
-            if block.get("type") == "text":
-                text_content += block.get("text", "") + "\n"
-        
-        # If it was just text blocks, use that, else send raw payload and hope it works
-        if text_content:
-            messages.append({"role": "user", "content": text_content.strip()})
-        else:
-            messages.append({"role": "user", "content": str(user_content)})
-    else:
-        messages.append({"role": "user", "content": user_content})
+        raise LLMUnavailableError("ANTHROPIC_API_KEY is not configured")
 
-    response = await _client().chat.completions.create(
-        model=settings.groq_model,
+    if isinstance(user_content, str):
+        messages = [{"role": "user", "content": user_content}]
+    else:
+        messages = [{"role": "user", "content": user_content}]
+
+    response = await _client().messages.create(
+        model=settings.anthropic_model,
         max_tokens=max_tokens or settings.llm_max_tokens,
         temperature=0,
+        system=system,
         messages=messages,
     )
     usage = getattr(response, "usage", None)
     if usage is not None:
         logger.info(
             "llm_usage",
-            input_tokens=getattr(usage, "prompt_tokens", None),
-            output_tokens=getattr(usage, "completion_tokens", None),
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
         )
-        
-    return response.choices[0].message.content or ""
+
+    parts: list[str] = []
+    for block in response.content:
+        text = getattr(block, "text", None)
+        if text:
+            parts.append(text)
+    return "".join(parts)
 
 
 def parse_json_block(text: str) -> Any:

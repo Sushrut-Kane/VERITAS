@@ -5,6 +5,7 @@ import { useUiStore } from "@/lib/store/uiStore";
 
 const links = [
   { to: "/upload", label: "Upload" },
+  { to: "/batch-upload", label: "Batch Upload" },
   { to: "/review", label: "Review" },
   { to: "/catalog", label: "Catalog" },
 ] as const;

@@ -1,20 +1,8 @@
-services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: veritas
-      POSTGRES_PASSWORD: veritas
-      POSTGRES_DB: veritas
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U veritas"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+# Postgres now lives in Supabase — set DATABASE_URL in .env to your Supabase
+# connection string. Use the port-6543 pooled URL for the app; use the direct
+# port-5432 URL when running Alembic migrations (see backend/app/db/migrations/env.py).
 
+services:
   neo4j:
     image: neo4j:5
     environment:
@@ -31,5 +19,4 @@ services:
       retries: 10
 
 volumes:
-  pgdata:
   neo4jdata:

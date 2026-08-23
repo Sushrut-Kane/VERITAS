@@ -3,6 +3,12 @@ from app.db.models.attribute import Attribute, Classification, PolicyDecision
 from app.db.models.audit_log import AuditEventType, AuditLog
 from app.db.models.document import DocType, Document, DocumentStatus
 from app.db.models.product import Product
+from app.db.models.reference import (
+    FractionDecimal,
+    LovAttribute,
+    Manufacturer,
+    UomAbbreviation,
+)
 
 __all__ = [
     "Product",
@@ -14,4 +20,8 @@ __all__ = [
     "PolicyDecision",
     "AuditLog",
     "AuditEventType",
+    "Manufacturer",
+    "LovAttribute",
+    "UomAbbreviation",
+    "FractionDecimal",
 ]
